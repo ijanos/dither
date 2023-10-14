@@ -37,7 +37,7 @@
         console.log("aaaa");
         const message = document.getElementById('message');
         if (ffmpeg === null) {
-          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd'
+          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/esm'
           ffmpeg = new FFmpeg();
           ffmpeg.on("log", ({ message }) => {
             console.log(message);
