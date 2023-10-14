@@ -1,0 +1,72 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <h3>Upload an image to qunatize into a dithered image</h3>
+    <input type="range" min="4" max="32" value="4" class="slider" id="max_colors">
+    <div id="max_colors_value"></div>
+
+    <select name="dither" id="dither">
+      <option value="bayer">bayer</option>
+      <option value="heckbert">heckbert</option>
+      <option value="floyd_steinberg">floyd_steinberg</option>
+      <option value="sierra2">sierra2</option>
+      <option value="sierra2_4a">sierra2_4a</option>
+    </select>
+
+
+    <p id="message"></p>
+    <input type="file" id="uploader">
+    <img id="output-image"></img><br/>
+
+    <script type="module">
+      import { FFmpeg } from '@ffmpeg/ffmpeg';
+      import { fetchFile, toBlobURL } from '@ffmpeg/util';
+
+      let ffmpeg = null;
+
+      const max_colors = document.getElementById('max_colors');
+      const slideroutput = document.getElementById("max_colors_value");
+      slideroutput.innerHTML = max_colors.value;
+
+      max_colors.oninput = function() {
+        slideroutput.innerHTML = this.value;
+      }
+
+      const transcode = async ({ target: { files } }) => {
+        console.log("aaaa");
+        const message = document.getElementById('message');
+        if (ffmpeg === null) {
+          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd'
+          ffmpeg = new FFmpeg();
+          ffmpeg.on("log", ({ message }) => {
+            console.log(message);
+          })
+          ffmpeg.on("progress", ({ progress }) => {
+            message.innerHTML = `${progress * 100} %`;
+          });
+
+          await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+            wasmURL: await toBlobURL( `${baseURL}/ffmpeg-core.wasm`, "application/wasm")
+          });
+        }
+
+        const { name } = files[0];
+        await ffmpeg.writeFile(name, await fetchFile(files[0]));
+        message.innerHTML = 'Start transcoding';
+        await ffmpeg.exec(['-h', 'filter=paletteuse']);
+
+        await ffmpeg.exec(['-i', name, '-vf', `palettegen=max_colors=${max_colors.value}`, 'palette.png']);
+        await ffmpeg.exec(['-i', name, '-i', 'palette.png', '-lavfi', `paletteuse=dither=${dither.value}`, "output.png"]);
+        message.innerHTML = 'Complete transc  oding';
+        const data = await ffmpeg.readFile('output.png');
+
+        const image = document.getElementById('output-image');
+        image.src = URL.createObjectURL(new Blob([data.buffer], { type: 'image/png' }));
+      }
+      const elm = document.getElementById('uploader');
+      elm.addEventListener('change', transcode);
+    </script>
+  </body>
+</html>
