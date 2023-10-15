@@ -17,7 +17,9 @@
 
     <p id="message"></p>
     <input type="file" id="uploader">
-    <img id="output-image"></img><br/>
+    <p>
+      <img width="500px" id="output-image"></img><br/>
+    </p>
 
     <script type="module">
       import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -34,10 +36,8 @@
       }
 
       const transcode = async ({ target: { files } }) => {
-        console.log("aaaa");
         const message = document.getElementById('message');
         if (ffmpeg === null) {
-          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/esm'
           ffmpeg = new FFmpeg();
           ffmpeg.on("log", ({ message }) => {
             console.log(message);
@@ -47,8 +47,8 @@
           });
 
           await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL( `${baseURL}/ffmpeg-core.wasm`, "application/wasm")
+            coreURL: await toBlobURL(`/ffmpeg-core.js`, "text/javascript"),
+            wasmURL: await toBlobURL(`/ffmpeg-core.wasm`, "application/wasm")
           });
         }
 
