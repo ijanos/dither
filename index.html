@@ -1,72 +1,124 @@
 <html>
   <head>
+  <meta charset="UTF-8" />
+  <title>dither tool</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="" />
+  <link rel="stylesheet" href="src/styles.css">
+  <link rel="icon" href="favicon.png">
   </head>
-  <body>
-    <h3>Upload an image to qunatize into a dithered image</h3>
-    <input type="range" min="4" max="32" value="4" class="slider" id="max_colors">
-    <div id="max_colors_value"></div>
+  <body class="">
+    <div class="flex flex-row">
+    <div class="bg-slate-100 basis-1/6 flex-col min-h-screen p-1">
+      <h1 class="font-extrabold text-right text-transparent text-6xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600" >dithertool</h1>
+      <h1 class="font-extrabold text-right font-mono text-transparent text-xs bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600" >powered by FFmpeg</h1>
 
-    <select name="dither" id="dither">
-      <option value="bayer">bayer</option>
-      <option value="heckbert">heckbert</option>
-      <option value="floyd_steinberg">floyd_steinberg</option>
-      <option value="sierra2">sierra2</option>
-      <option value="sierra2_4a">sierra2_4a</option>
-    </select>
+      <div id="options" class="flex flex-col gap-4">
+
+      <div>
+        <label>
+          colors
+          <select name="colors" id="colors">
+            <option value="gen">from picture</option>
+            <option value="bw">black & white</option>
+            <option value="g3">3 greys</option>
+            <option value="gb">GameBoy</option>
+            <option value="c64">C64</option>
+            <option value="demichrome">demichrome</option>
+            <option value="autumn">autumn</option>
+          </select>
+      </label> </div>
+
+      <div>
+        <label>
+          dither algorithm
+          <select name="dither" id="dither">
+            <option value="bayer">bayer</option>
+            <option value="heckbert">heckbert</option>
+            <option value="floyd_steinberg">floyd_steinberg</option>
+            <option value="sierra2">sierra2</option>
+            <option value="sierra2_4a">sierra2_4a</option>
+          </select>
+        </label>
+      </div>
+
+      <input type="file" id="uploader" accept="image/*">
+
+      <div class="flex justify-center">
+        <img width="100px" id="thumbnail">
+      </div>
+
+      <button type="button" id="ditherbutton" class="min-w-full text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-xl px-5 py-2.5 mr-2 mb-2focus:outline-none">dither!</button>
+
+    </div>
 
 
-    <p id="message"></p>
-    <input type="file" id="uploader">
-    <p>
-      <img width="500px" id="output-image"></img><br/>
-    </p>
+    </div>
+
+    <div class="bg-[url('/grid.png')] bg-repeat basis-5/6">
+      <img class="p-2" id="output-image"></img>
+  </div>
+
+</div>
 
     <script type="module">
       import { FFmpeg } from '@ffmpeg/ffmpeg';
       import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
       let ffmpeg = null;
+      let name = null;
 
-      const max_colors = document.getElementById('max_colors');
-      const slideroutput = document.getElementById("max_colors_value");
-      slideroutput.innerHTML = max_colors.value;
-
-      max_colors.oninput = function() {
-        slideroutput.innerHTML = this.value;
-      }
-
-      const transcode = async ({ target: { files } }) => {
-        const message = document.getElementById('message');
-        if (ffmpeg === null) {
-          ffmpeg = new FFmpeg();
+      const initFFmpeg = async () => {
+        ffmpeg = new FFmpeg();
           ffmpeg.on("log", ({ message }) => {
             console.log(message);
           })
-          ffmpeg.on("progress", ({ progress }) => {
-            message.innerHTML = `${progress * 100} %`;
-          });
+          ffmpeg.on("progress", ({ progress }) => { });
 
           await ffmpeg.load({
-            coreURL: await toBlobURL(`/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`/ffmpeg-core.wasm`, "application/wasm")
+            coreURL: await toBlobURL('/ffmpeg-core.js', "text/javascript"),
+            wasmURL: await toBlobURL('/ffmpeg-core.wasm', "application/wasm")
           });
+      }
+
+      const transcode = async ({ target: { files } }) => {
+        const dither = document.getElementById('dither').value;
+        const colors = document.getElementById('colors').value;
+
+        if (ffmpeg === null) {
+          await initFFmpeg()
         }
 
-        const { name } = files[0];
-        await ffmpeg.writeFile(name, await fetchFile(files[0]));
-        message.innerHTML = 'Start transcoding';
-        await ffmpeg.exec(['-h', 'filter=paletteuse']);
+        if (colors == "gen") {
+          await ffmpeg.exec(['-i', name, '-vf', 'palettegen=max_colors=4', 'palette.png']);
+        } else {
+          await ffmpeg.writeFile("palette.png", await fetchFile(`pal_${colors}.png`));
+        }
 
-        await ffmpeg.exec(['-i', name, '-vf', `palettegen=max_colors=${max_colors.value}`, 'palette.png']);
-        await ffmpeg.exec(['-i', name, '-i', 'palette.png', '-lavfi', `paletteuse=dither=${dither.value}`, "output.png"]);
-        message.innerHTML = 'Complete transc  oding';
+        await ffmpeg.exec(['-i', name, '-i', 'palette.png', '-lavfi', `paletteuse=dither=${dither}`, "output.png"]);
+
         const data = await ffmpeg.readFile('output.png');
 
         const image = document.getElementById('output-image');
         image.src = URL.createObjectURL(new Blob([data.buffer], { type: 'image/png' }));
       }
+
+      const updateThumbnail = async ({ target: { files } }) => {
+        if (ffmpeg === null) {
+          await initFFmpeg()
+        }
+        name = files[0].name;
+        await ffmpeg.writeFile(name, await fetchFile(files[0]));
+
+        const data = await ffmpeg.readFile(name);
+        const image = document.getElementById('thumbnail');
+
+        image.src = URL.createObjectURL(new Blob([data.buffer]));
+      }
       const elm = document.getElementById('uploader');
-      elm.addEventListener('change', transcode);
+      elm.addEventListener('change', updateThumbnail);
+      const ditherbutton = document.getElementById('ditherbutton');
+      ditherbutton.addEventListener('click', transcode);
     </script>
   </body>
 </html>
