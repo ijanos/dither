@@ -1,4 +1,14 @@
-ffmpeg flags
+# dithertool
+
+Client side web tool to create dithered images.
+Actual dithering is done by FFmpeg.wasm
+
+## ffmpeg.wasm
+
+The ffmpeg.wasm file is around 30Mb by default, it can be greatly slimmed down
+for image processing.
+
+With some trial and error I managed to slim it under 2Mb with these compile flags.
 
 ```
 bash -x /src/build.sh \
@@ -20,9 +30,3 @@ bash -x /src/build.sh \
 --enable-muxer=apng,image2 \
 --enable-demuxer=apng,gif,image_png_pipe,image2
 ```
-
-
-
-Regular Dither icon by Arthur Shlain from Usefulicons
-CC-BY-3.0
-https://usefulicons.com/glyph-16x16/regular-dither
