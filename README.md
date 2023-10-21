@@ -1,7 +1,7 @@
 # dithertool
 
 Client side web tool to create dithered images.
-Actual dithering is done by FFmpeg.wasm
+Actual dithering is done by [FFmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)
 
 ## ffmpeg.wasm
 
@@ -30,3 +30,7 @@ bash -x /src/build.sh \
 --enable-muxer=apng,image2 \
 --enable-demuxer=apng,gif,image_png_pipe,image2
 ```
+
+## palettes
+
+Plattes I didn't create are from https://lospec.com/palette-list/tag/2bit
