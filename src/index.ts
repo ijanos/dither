@@ -19,10 +19,32 @@ const initFFmpeg = async () => {
 const ffmpeg = initFFmpeg();
 let name: string = "";
 
+
+function progressStart() {
+  const text = document.getElementById('dithertext');
+  const spinner = document.getElementById('ditherspinner');
+  text?.classList.remove("inline");
+  text?.classList.add("hidden");
+  spinner?.classList.remove("hidden");
+  spinner?.classList.add("inline");
+}
+
+function progressEnd() {
+  const text = document.getElementById('dithertext');
+  const spinner = document.getElementById('ditherspinner');
+  text?.classList.remove("hidden");
+  text?.classList.add("inline");
+  spinner?.classList.remove("inline");
+  spinner?.classList.add("hidden");
+}
+
 const dither = async () => {
+  if (name == "") {return}
+
+  progressStart();
+
   const dither = (document.getElementById('dither') as HTMLInputElement).value;
   const colors = (document.getElementById('colors') as HTMLInputElement).value;
-
   const ff = await ffmpeg;
 
   if (colors == "gen") {
@@ -37,6 +59,8 @@ const dither = async () => {
 
   const image = document.getElementById('output-image') as HTMLImageElement;
   image.src = URL.createObjectURL(new Blob([(await data).buffer], { type: 'image/png' }));
+
+  progressEnd();
 }
 
 const updateThumbnail = async (e: Event) => {
