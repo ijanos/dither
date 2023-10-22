@@ -16,7 +16,7 @@ const initFFmpeg = async () => {
   return ffmpeg;
 }
 
-const ffmpeg: Promise<FFmpeg> = initFFmpeg();
+const ffmpeg = initFFmpeg();
 let name: string = "";
 
 const dither = async () => {
@@ -39,17 +39,19 @@ const dither = async () => {
   image.src = URL.createObjectURL(new Blob([(await data).buffer], { type: 'image/png' }));
 }
 
-const updateThumbnail = async (e: Event): Promise<void> => {
+const updateThumbnail = async (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = (target.files as FileList)[0];
-  const ff = await ffmpeg;
-
   name = file.name;
-  await ff.writeFile(name, await fetchFile(file));
+
+  if (name.split(".").pop()?.toLowerCase() == "heic") {
+    console.log("heic not supported"); // TODO warning on UI
+  }
 
   const image = document.getElementById('thumbnail') as HTMLImageElement;
-
   image.src = URL.createObjectURL(file);
+
+  await (await ffmpeg).writeFile(name, new Uint8Array(await file.arrayBuffer()));
 }
 
 const uploadButton = document.getElementById('uploader') as HTMLInputElement;
