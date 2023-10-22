@@ -9,7 +9,7 @@
   <link rel="icon" href="favicon.png">
 </head>
 
-<body class="">
+<body class="text-gray-800">
   <div class="flex flex-row">
     <div class="flex flex-col min-h-screen p-1 border-r-4 border-pink-400 bg-slate-100 basis-1/6">
       <h1
@@ -19,41 +19,43 @@
         class="font-mono text-xs font-extrabold text-right text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
         powered by FFmpeg</h1>
 
-      <div id="options" class="flex flex-col gap-4">
-
+      <div id="options" class="flex flex-col gap-6 mt-5">
         <div>
-          <label>
-            colors
-            <select name="colors" id="colors">
-              <option value="gen">from picture</option>
-              <option value="bw">black & white</option>
-              <option value="g3">3 greys</option>
-              <option value="gb">GameBoy</option>
-              <option value="c64">C64</option>
-              <option value="demichrome">demichrome</option>
-              <option value="autumn">autumn</option>
-            </select>
-          </label>
+          <label for="uploader" class="block mb-2 text-lg font-medium"> 1️⃣ Choose an image </label>
+          <input type="file" id="uploader" accept="image/*">
         </div>
-
-        <div>
-          <label>
-            dither algorithm
-            <select name="dither" id="dither">
-              <option value="bayer">bayer</option>
-              <option value="heckbert">heckbert</option>
-              <option value="floyd_steinberg">floyd_steinberg</option>
-              <option value="sierra2">sierra2</option>
-              <option value="sierra2_4a">sierra2_4a</option>
-            </select>
-          </label>
-        </div>
-
-        <input type="file" id="uploader" accept="image/*">
 
         <div class="flex justify-center">
           <img width="100px" id="thumbnail">
         </div>
+
+        <div>
+          <label for="colors" class="block mb-2 text-lg font-medium"> 2️⃣ Choose a palette </label>
+          <select name="colors" id="colors"
+            class="block w-full p-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
+            <option value="gen">use picture's colors (4 colors)</option>
+            <option value="bw">black & white (2 colors)</option>
+            <option value="g3">black & white & grey (3 colors)</option>
+            <option value="gb">GameBoy (4 colors)</option>
+            <option value="c64">C64 (16 colors)</option>
+            <option value="demichrome">demichrome (4 colors)</option>
+            <option value="autumn">autumn (4 colors)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dither" class="block mb-2 text-lg font-medium"> 3️⃣ Choose an algorithm </label>
+          <select name="dither" id="dither"
+            class="block w-full p-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
+            <option value="bayer">Bayer</option>
+            <option value="heckbert">Heckbert</option>
+            <option value="floyd_steinberg">Floyd & Steinberg</option>
+            <option value="sierra2">Frankie Sierra v2 </option>
+            <option value="sierra2_4a">Frankie Sierra v2 "Lite"</option>
+          </select>
+        </div>
+
+
 
         <button type="button" id="ditherbutton"
           class="min-w-full text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-xl px-5 py-2.5 mr-2 mb-2focus:outline-none">
