@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["src/**/*.ts", "vite.config.js"]
+    "includes": ["index.html", "src/**/*.ts", "vite.config.js"]
   },
   "formatter": {
     "enabled": false
@@ -10,6 +10,19 @@
     "enabled": false
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "noUndeclaredDependencies": "error",
+        "noUnresolvedImports": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "warn",
+        "noMisusedPromises": "warn"
+      },
+      "suspicious": {
+        "noImportCycles": "warn"
+      }
+    }
   }
 }
