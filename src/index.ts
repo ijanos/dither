@@ -8,6 +8,7 @@ function requireElement<T extends Element = Element>(selector: string): T {
 
 const uploader = requireElement<HTMLInputElement>('#uploader');
 const palette = requireElement<HTMLSelectElement>('#colors');
+const colorCount = requireElement<HTMLInputElement>('#color-count');
 const algorithm = requireElement<HTMLSelectElement>('#dither');
 const button = requireElement<HTMLButtonElement>('#ditherbutton');
 const buttonText = requireElement('#dithertext');
@@ -36,11 +37,19 @@ function showError(message = '') {
   errorMessage.classList.toggle('hidden', !message);
 }
 
+function updateColorCountAvailability() {
+  colorCount.disabled = palette.value !== 'gen';
+}
+
+palette.addEventListener('change', updateColorCountAvailability);
+updateColorCountAvailability();
+
 uploader.addEventListener('change', () => {
   const file = uploader.files?.[0];
   if (thumbnail.src.startsWith('blob:')) URL.revokeObjectURL(thumbnail.src);
   if (file) thumbnail.src = URL.createObjectURL(file);
   else thumbnail.removeAttribute('src');
+  thumbnail.hidden = !file;
   button.disabled = !file;
   showError();
 });
@@ -48,9 +57,11 @@ uploader.addEventListener('change', () => {
 button.addEventListener('click', async () => {
   const file = uploader.files?.[0];
   if (!file || button.disabled) return;
+  if (!colorCount.reportValidity()) return;
 
   const filename = `input${file.name.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase() ?? ''}`;
   const selectedPalette = palette.value;
+  const selectedColorCount = colorCount.valueAsNumber;
   const selectedAlgorithm = algorithm.value;
   button.disabled = true;
   uploader.disabled = true;
@@ -64,6 +75,7 @@ button.addEventListener('click', async () => {
       filename,
       image: await file.arrayBuffer(),
       palette: selectedPalette,
+      colorCount: selectedColorCount,
       algorithm: selectedAlgorithm,
     });
     if (output.src.startsWith('blob:')) URL.revokeObjectURL(output.src);

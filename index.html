@@ -21,18 +21,18 @@
       <div id="options" class="flex flex-col gap-6 mt-5">
         <div>
           <label for="uploader" class="block mb-2 text-lg font-medium"> 1️⃣ Choose an image </label>
-          <input type="file" id="uploader" accept="image/*">
+          <input type="file" id="uploader" accept="image/*"
+            class="max-w-full disabled:opacity-50 file:mr-3 file:rounded-lg file:bg-purple-200 file:px-4 file:py-2 file:text-purple-900
+              enabled:file:cursor-pointer enabled:hover:file:bg-purple-300">
         </div>
 
-        <div class="flex justify-center">
-          <img class="max-h-48" id="thumbnail" alt="Upload preview">
-        </div>
+        <img class="max-h-48 self-center" id="thumbnail" alt="Upload preview" hidden>
 
         <div>
           <label for="colors" class="block mb-2 text-lg font-medium"> 2️⃣ Choose a palette </label>
           <select name="colors" id="colors"
             class="block w-full p-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-            <option value="gen">use picture's colors (4 colors)</option>
+            <option value="gen">use picture's colors</option>
             <option value="bw">black & white (2 colors)</option>
             <option value="g3">black & white & grey (3 colors)</option>
             <option value="gb">GameBoy (4 colors)</option>
@@ -42,6 +42,11 @@
             <option value="win16">Windows (16 colors)</option>
             <option value="bw6">"Black and White 6" (6 colors)</option>
           </select>
+          <div class="mt-2 flex items-center gap-2">
+            <label for="color-count">Number of colors</label>
+            <input type="number" id="color-count" min="2" max="255" step="1" value="4" required
+              class="w-20 rounded-lg border border-gray-300 bg-gray-50 p-2 disabled:opacity-50">
+          </div>
         </div>
 
         <div>

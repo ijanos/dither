@@ -3,6 +3,7 @@ export interface DitherRequest {
   filename: string;
   image: ArrayBuffer;
   palette: string;
+  colorCount: number;
   algorithm: string;
 }
 
@@ -72,8 +73,10 @@ async function dither(request: DitherRequest): Promise<ArrayBuffer> {
 
   let palette: Uint8Array;
   if (request.palette === 'gen') {
+    // FFmpeg reserves one extra palette entry for transparency.
+    const maxColors = request.colorCount + 1;
     palette = await renderPng(createFFmpeg, coreBase,
-      ['-i', request.filename, '-vf', 'palettegen=max_colors=4'], input, 'palette.png');
+      ['-i', request.filename, '-vf', `palettegen=max_colors=${maxColors}`], input, 'palette.png');
   } else {
     const response = await fetch(new URL(`pal_${request.palette}.png`, request.assetBase));
     if (!response.ok) throw new Error('Could not load the selected palette.');
