@@ -5,16 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "lint": "biome lint .",
     "build": "tsc && vite build",
     "build:ffmpeg": "bash scripts/build-ffmpeg.sh",
     "preview": "vite preview",
     "deploy": "npm run build && npx wrangler pages deploy dist/"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.8",
     "@tailwindcss/vite": "^4.3.5",
-    "@typescript-eslint/eslint-plugin": "^8",
-    "@typescript-eslint/parser": "^8",
-    "eslint": "^10",
     "tailwindcss": "^4.3",
     "typescript": "^6",
     "vite": "^8"

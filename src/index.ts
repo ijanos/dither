@@ -1,14 +1,20 @@
 import type { DitherRequest, DitherResult } from './dither-worker';
 
-const uploader = document.querySelector<HTMLInputElement>('#uploader')!;
-const palette = document.querySelector<HTMLSelectElement>('#colors')!;
-const algorithm = document.querySelector<HTMLSelectElement>('#dither')!;
-const button = document.querySelector<HTMLButtonElement>('#ditherbutton')!;
-const buttonText = document.getElementById('dithertext')!;
-const spinner = document.getElementById('ditherspinner')!;
-const errorMessage = document.getElementById('dither-error')!;
-const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
-const output = document.querySelector<HTMLImageElement>('#output-image')!;
+function requireElement<T extends Element = Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Missing required element: ${selector}`);
+  return element;
+}
+
+const uploader = requireElement<HTMLInputElement>('#uploader');
+const palette = requireElement<HTMLSelectElement>('#colors');
+const algorithm = requireElement<HTMLSelectElement>('#dither');
+const button = requireElement<HTMLButtonElement>('#ditherbutton');
+const buttonText = requireElement('#dithertext');
+const spinner = requireElement('#ditherspinner');
+const errorMessage = requireElement('#dither-error');
+const thumbnail = requireElement<HTMLImageElement>('#thumbnail');
+const output = requireElement<HTMLImageElement>('#output-image');
 const assetBase = new URL(import.meta.env.BASE_URL, document.baseURI).href;
 
 function runDither(request: DitherRequest): Promise<ArrayBuffer> {
@@ -43,7 +49,7 @@ button.addEventListener('click', async () => {
   const file = uploader.files?.[0];
   if (!file || button.disabled) return;
 
-  const filename = 'input' + (file.name.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase() ?? '');
+  const filename = `input${file.name.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase() ?? ''}`;
   const selectedPalette = palette.value;
   const selectedAlgorithm = algorithm.value;
   button.disabled = true;
