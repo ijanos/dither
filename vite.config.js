@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, renameSync } from "node:fs";
 import { resolve } from "node:path";
@@ -28,7 +29,7 @@ export default defineConfig(({ command, isPreview }) => {
   }
   return {
     define: { __FFMPEG_DIRECTORY__: JSON.stringify(coreDirectory) },
-    plugins: [{
+    plugins: [tailwindcss(), {
       name: "ffmpeg-thread-script",
       writeBundle({ dir }) {
         renameSync(resolve(dir, "ffmpeg"), resolve(dir, coreDirectory));
