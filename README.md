@@ -14,20 +14,19 @@ npm run dev
 Open the localhost URL printed by Vite. The threaded core needs cross-origin
 isolation. Vite serves the required headers for both development and preview.
 
-## Build the OpenClaw FFmpeg core
+## Build the FFmpeg core
 
-Install Node 24.22.1 or newer, pnpm 12.15.0, and Emscripten 6.0.11. Follow the
-upstream guide to install the system tools and activate Emscripten with your
-installed version of Node. [Toolchain instructions](https://github.com/openclaw/ffmpeg-wasm/blob/b3c8e83919d7b0fae91f519fe8f82ae81be766a3/README.md#install)
+Install and activate Emscripten 6.0.11 with Node 24.22.1 or newer. You'll also
+need Git, Make, and pkg-config. [Emscripten SDK setup](https://emscripten.org/docs/getting_started/downloads.html)
 
 ```sh
 npm run build:ffmpeg
 ```
 
-The script checks out the pinned OpenClaw source under `.ffmpeg-build/` and
-applies the patch that enables palette generation, dithering, GIF demuxing,
-parsing, and decoding, and JPEG 2000 decoding. It writes the browser FFmpeg
-JavaScript, WebAssembly, and upstream license notices to `public/ffmpeg/`.
+The script builds FFmpeg 9.0.2 with `-Oz` and link-time optimization. It
+includes the codecs needed for PNG, JPEG, GIF, JPEG 2000, and HEIC input and
+PNG output. The browser JavaScript, WASM, and license notices go in
+`public/ffmpeg/`.
 
 ## Original ffmpeg.wasm build
 

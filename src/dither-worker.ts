@@ -67,7 +67,7 @@ async function dither(request: DitherRequest): Promise<ArrayBuffer> {
   const coreBase = new URL('ffmpeg/', request.assetBase);
   const coreURL = new URL('ffmpeg.js', coreBase).href;
   const { default: createFFmpeg }: { default: CreateFFmpeg } = await import(/* @vite-ignore */ coreURL)
-    .catch(() => { throw new Error('Could not load the OpenClaw FFmpeg core. Run npm run build:ffmpeg and reload.'); });
+    .catch(() => { throw new Error('Could not load the FFmpeg core. Run npm run build:ffmpeg and reload.'); });
   const input = { [request.filename]: new Uint8Array(request.image) };
 
   let palette: Uint8Array;

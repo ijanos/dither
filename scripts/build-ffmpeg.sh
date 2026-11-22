@@ -3,13 +3,15 @@ set -euo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 build_dir="$repo_root/.ffmpeg-build"
-source_dir="$build_dir/openclaw"
+source_dir="$build_dir/ffmpeg"
+browser_dir="$build_dir/browser-ffmpeg"
 output_dir="$repo_root/public/ffmpeg"
-upstream_url=https://github.com/openclaw/ffmpeg-wasm.git
-upstream_revision=b3c8e83919d7b0fae91f519fe8f82ae81be766a3
+ffmpeg_url=https://github.com/FFmpeg/FFmpeg.git
+# FFmpeg n9.0.2, the same revision used by the OpenClaw build.
+ffmpeg_revision=946fcce07b6dcd0331c8cc609192aeff5e1924f8
 
 missing_tools=()
-for tool in git node pnpm emcc em++ emar emranlib emnm emmake emconfigure make pkg-config autoconf automake libtool nasm yasm; do
+for tool in git node emcc em++ emar emranlib emnm emmake emconfigure make pkg-config; do
   if ! command -v "$tool" >/dev/null; then
     missing_tools+=("$tool")
   fi
@@ -19,28 +21,47 @@ if ((${#missing_tools[@]})); then
   exit 1
 fi
 
-mkdir -p "$source_dir"
+mkdir -p "$source_dir" "$browser_dir"
 if [[ ! -d "$source_dir/.git" ]]; then
   git init --quiet "$source_dir"
 fi
-if ! git -C "$source_dir" cat-file -e "$upstream_revision^{commit}" 2>/dev/null; then
-  git -C "$source_dir" fetch --quiet --depth=1 "$upstream_url" "$upstream_revision"
+if ! git -C "$source_dir" cat-file -e "$ffmpeg_revision^{commit}" 2>/dev/null; then
+  git -C "$source_dir" fetch --quiet --depth=1 "$ffmpeg_url" "$ffmpeg_revision"
 fi
+git -C "$source_dir" checkout --quiet --detach "$ffmpeg_revision"
 
-cd -- "$source_dir"
-git checkout --quiet --detach "$upstream_revision"
-# Restore the generated checkout's build script so the patch can be reapplied.
-git restore --source="$upstream_revision" --worktree -- scripts/build.ts
-git apply "$repo_root/scripts/openclaw-dither.patch"
-pnpm install --frozen-lockfile --store-dir "$build_dir/pnpm-store"
-env -u FFMPEG_VERSION -u LAME_REF -u LIBVPX_REF pnpm build
+cd -- "$browser_dir"
+compile_flags="-Oz -flto -pthread -sUSE_ZLIB=1"
+link_flags="$compile_flags -sENVIRONMENT=web,worker -sMODULARIZE=1 -sEXPORT_ES6=1"
+link_flags+=" -sALLOW_MEMORY_GROWTH=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD=1"
+link_flags+=" -sEXIT_RUNTIME=1 -sEXPORTED_RUNTIME_METHODS=FS,callMain"
+
+# HEIC input needs the MOV demuxer and HEVC decoder.
+emconfigure "$source_dir/configure" \
+  --target-os=none --arch=x86_32 --enable-cross-compile \
+  --disable-x86asm --disable-inline-asm --disable-stripping --disable-doc \
+  --disable-debug --disable-autodetect --disable-all --disable-network \
+  --disable-iconv --disable-runtime-cpudetect \
+  --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter \
+  --enable-swscale --enable-swresample --enable-pthreads --enable-zlib \
+  --enable-decoder=gif,hevc,jpeg2000,mjpeg,png \
+  --enable-parser=gif,hevc,mjpeg,png \
+  --enable-demuxer=gif,image2,mov \
+  --enable-encoder=png --enable-muxer=image2 --enable-protocol=file \
+  --enable-filter=palettegen,paletteuse,scale,format \
+  --cc=emcc --cxx=em++ --ar=emar --ranlib=emranlib --nm=emnm \
+  --optflags=-Oz --extra-cflags="$compile_flags" --extra-ldflags="$compile_flags"
+
+jobs=$(node -p 'Math.min(8, require("node:os").availableParallelism())')
+emmake make -j "$jobs" ffmpeg "LDEXEFLAGS=$link_flags"
 
 mkdir -p "$output_dir"
-cp dist/browser/ffmpeg.js dist/browser/ffmpeg_g dist/browser/ffmpeg_g.wasm "$output_dir/"
-if [[ -f dist/browser/ffmpeg.worker.js ]]; then
-  cp dist/browser/ffmpeg.worker.js "$output_dir/"
+cp ffmpeg "$output_dir/ffmpeg.js"
+cp ffmpeg_g ffmpeg_g.wasm "$output_dir/"
+cp "$source_dir"/LICENSE.md "$source_dir"/COPYING.* "$output_dir/"
+# Remove artifacts from the previous build's external encoders and worker.
+rm -f "$output_dir"/{COPYING.lame,LICENSE.lame,LICENSE.libvpx,PATENTS.libvpx,ffmpeg.worker.js}
+if [[ -f ffmpeg.worker.js ]]; then
+  cp ffmpeg.worker.js "$output_dir/"
 fi
-cp dist/LICENSE.md dist/COPYING.* dist/LICENSE.libvpx dist/PATENTS.libvpx "$output_dir/"
-cp .cache/lame/COPYING "$output_dir/COPYING.lame"
-cp .cache/lame/LICENSE "$output_dir/LICENSE.lame"
 printf 'Browser FFmpeg assets written to %s\n' "$output_dir"
