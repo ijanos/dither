@@ -1,0 +1,21 @@
+--- a/scripts/build.ts
++++ b/scripts/build.ts
+@@ -43,14 +43,14 @@
+   "--enable-avfilter",
+   "--enable-swresample",
+   "--enable-swscale",
+-  "--enable-decoder=h264,hevc,mpeg4,vp8,vp9,aac,mp3,flac,vorbis,opus,pcm_s16le,png,mjpeg,wrapped_avframe",
++  "--enable-decoder=h264,hevc,mpeg4,vp8,vp9,aac,mp3,flac,vorbis,opus,pcm_s16le,png,mjpeg,gif,jpeg2000,wrapped_avframe",
+-  "--enable-parser=h264,hevc,mpeg4video,vp8,vp9,aac,mpegaudio,opus,vorbis,png,mjpeg",
++  "--enable-parser=h264,hevc,mpeg4video,vp8,vp9,aac,mpegaudio,opus,vorbis,png,mjpeg,gif",
+-  "--enable-demuxer=mov,matroska,mp3,wav,flac,ogg,aac,mpegts,hls,image2",
++  "--enable-demuxer=mov,matroska,mp3,wav,flac,ogg,aac,mpegts,hls,image2,gif",
+   "--enable-indev=lavfi",
+   "--enable-muxer=null,rawvideo,image2,wav,segment,mp3,mov,mp4,webm",
+   "--enable-encoder=mpeg4,png,rawvideo,wrapped_avframe,pcm_s16le,libmp3lame,libvpx_vp8,opus",
+   "--enable-protocol=file,data,pipe,fd",
+-  "--enable-filter=scale,format,select,showinfo,signalstats,metadata,null,aresample,aformat,testsrc2,sine",
++  "--enable-filter=scale,format,select,showinfo,signalstats,metadata,null,aresample,aformat,testsrc2,sine,palettegen,paletteuse",
+   "--enable-zlib",
+   "--enable-libmp3lame",
+   "--enable-libvpx",

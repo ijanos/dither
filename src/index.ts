@@ -1,85 +1,73 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import type { DitherRequest, DitherResult } from './dither-worker';
 
-const initFFmpeg = async () => {
-  const ffmpeg = new FFmpeg();
+const uploader = document.querySelector<HTMLInputElement>('#uploader')!;
+const palette = document.querySelector<HTMLSelectElement>('#colors')!;
+const algorithm = document.querySelector<HTMLSelectElement>('#dither')!;
+const button = document.querySelector<HTMLButtonElement>('#ditherbutton')!;
+const buttonText = document.getElementById('dithertext')!;
+const spinner = document.getElementById('ditherspinner')!;
+const errorMessage = document.getElementById('dither-error')!;
+const thumbnail = document.querySelector<HTMLImageElement>('#thumbnail')!;
+const output = document.querySelector<HTMLImageElement>('#output-image')!;
+const assetBase = new URL(import.meta.env.BASE_URL, document.baseURI).href;
 
-  ffmpeg.on("log", ({ message }) => {
-    console.log(message);
-  });
+function runDither(request: DitherRequest): Promise<ArrayBuffer> {
+  const worker = new Worker(new URL('./dither-worker.ts', import.meta.url), { type: 'module' });
 
-  await ffmpeg.load({
-    coreURL: await toBlobURL('/ffmpeg-core.js', "text/javascript"),
-    wasmURL: await toBlobURL('/ffmpeg-core.wasm', "application/wasm")
-  });
-
-  return ffmpeg;
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    worker.onmessage = ({ data }: MessageEvent<DitherResult>) => {
+      if ('error' in data) reject(new Error(data.error));
+      else resolve(data.png);
+    };
+    worker.onerror = ({ message }) => reject(new Error(message || 'The dithering worker failed to start.'));
+    worker.onmessageerror = () => reject(new Error('The dithering worker returned an unreadable result.'));
+    worker.postMessage(request, [request.image]);
+  }).finally(() => worker.terminate());
 }
 
-const ffmpeg = initFFmpeg();
-let name: string = "";
-
-
-function progressStart() {
-  const text = document.getElementById('dithertext');
-  const spinner = document.getElementById('ditherspinner');
-  text?.classList.remove("inline");
-  text?.classList.add("hidden");
-  spinner?.classList.remove("hidden");
-  spinner?.classList.add("inline");
+function showError(message = '') {
+  errorMessage.textContent = message;
+  errorMessage.classList.toggle('hidden', !message);
 }
 
-function progressEnd() {
-  const text = document.getElementById('dithertext');
-  const spinner = document.getElementById('ditherspinner');
-  text?.classList.remove("hidden");
-  text?.classList.add("inline");
-  spinner?.classList.remove("inline");
-  spinner?.classList.add("hidden");
-}
+uploader.addEventListener('change', () => {
+  const file = uploader.files?.[0];
+  if (thumbnail.src.startsWith('blob:')) URL.revokeObjectURL(thumbnail.src);
+  if (file) thumbnail.src = URL.createObjectURL(file);
+  else thumbnail.removeAttribute('src');
+  button.disabled = !file;
+  showError();
+});
 
-const dither = async () => {
-  if (name == "") {return}
+button.addEventListener('click', async () => {
+  const file = uploader.files?.[0];
+  if (!file || button.disabled) return;
 
-  progressStart();
+  const filename = 'input' + (file.name.match(/\.[a-z0-9]+$/i)?.[0].toLowerCase() ?? '');
+  const selectedPalette = palette.value;
+  const selectedAlgorithm = algorithm.value;
+  button.disabled = true;
+  uploader.disabled = true;
+  buttonText.classList.add('hidden');
+  spinner.classList.replace('hidden', 'inline');
+  showError();
 
-  const dither = (document.getElementById('dither') as HTMLInputElement).value;
-  const colors = (document.getElementById('colors') as HTMLInputElement).value;
-  const ff = await ffmpeg;
-
-  if (colors == "gen") {
-    await ff.exec(['-i', name, '-vf', 'palettegen=max_colors=4', 'palette.png']);
-  } else {
-    await ff.writeFile("palette.png", await fetchFile(`pal_${colors}.png`));
+  try {
+    const png = await runDither({
+      assetBase,
+      filename,
+      image: await file.arrayBuffer(),
+      palette: selectedPalette,
+      algorithm: selectedAlgorithm,
+    });
+    if (output.src.startsWith('blob:')) URL.revokeObjectURL(output.src);
+    output.src = URL.createObjectURL(new Blob([png], { type: 'image/png' }));
+  } catch (error) {
+    showError(error instanceof Error ? error.message : String(error));
+  } finally {
+    spinner.classList.replace('inline', 'hidden');
+    buttonText.classList.remove('hidden');
+    uploader.disabled = false;
+    button.disabled = false;
   }
-
-  await ff.exec(['-i', name, '-i', 'palette.png', '-lavfi', `paletteuse=dither=${dither}`, "output.png"]);
-
-  const data = ff.readFile('output.png') as Promise<Uint8Array>;
-
-  const image = document.getElementById('output-image') as HTMLImageElement;
-  image.src = URL.createObjectURL(new Blob([(await data).buffer], { type: 'image/png' }));
-
-  progressEnd();
-}
-
-const updateThumbnail = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = (target.files as FileList)[0];
-  name = file.name;
-
-  if (name.split(".").pop()?.toLowerCase() == "heic") {
-    console.log("heic not supported"); // TODO warning on UI
-  }
-
-  const image = document.getElementById('thumbnail') as HTMLImageElement;
-  image.src = URL.createObjectURL(file);
-
-  await (await ffmpeg).writeFile(name, new Uint8Array(await file.arrayBuffer()));
-}
-
-const uploadButton = document.getElementById('uploader') as HTMLInputElement;
-uploadButton.addEventListener('change', updateThumbnail);
-
-const ditherbutton = document.getElementById('ditherbutton') as HTMLButtonElement;
-ditherbutton.addEventListener('click', dither);
+});

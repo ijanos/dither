@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:ffmpeg": "bash scripts/build-ffmpeg.sh",
     "preview": "vite preview",
     "deploy": "npm run build && npx wrangler pages deploy dist/"
   },
@@ -18,9 +19,5 @@
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
-  },
-  "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.6",
-    "@ffmpeg/util": "^0.12.1"
   }
 }
