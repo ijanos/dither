@@ -64,7 +64,7 @@ async function dither(request: DitherRequest): Promise<ArrayBuffer> {
     throw new Error('FFmpeg requires cross-origin isolation. Open this app through the Vite development server or preview.');
   }
 
-  const coreBase = new URL('ffmpeg/', request.assetBase);
+  const coreBase = new URL(`${__FFMPEG_DIRECTORY__}/`, request.assetBase);
   const coreURL = new URL('ffmpeg.js', coreBase).href;
   const { default: createFFmpeg }: { default: CreateFFmpeg } = await import(/* @vite-ignore */ coreURL)
     .catch(() => { throw new Error('Could not load the FFmpeg core. Run npm run build:ffmpeg and reload.'); });

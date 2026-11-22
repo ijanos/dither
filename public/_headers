@@ -2,5 +2,5 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
 
-/ffmpeg/ffmpeg_g
+/ffmpeg-*/ffmpeg_g
   Content-Type: text/javascript; charset=utf-8
