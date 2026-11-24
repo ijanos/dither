@@ -69,23 +69,21 @@ async function dither(request: DitherRequest): Promise<ArrayBuffer> {
   const coreURL = new URL('ffmpeg.js', coreBase).href;
   const { default: createFFmpeg }: { default: CreateFFmpeg } = await import(/* @vite-ignore */ coreURL)
     .catch(() => { throw new Error('Could not load the FFmpeg core. Run npm run build:ffmpeg and reload.'); });
-  const input = { [request.filename]: new Uint8Array(request.image) };
-
-  let palette: Uint8Array;
+  const inputs = { [request.filename]: new Uint8Array(request.image) };
+  const args = ['-i', request.filename];
+  const paletteUse = `paletteuse=dither=${request.algorithm}`;
   if (request.palette === 'gen') {
     // FFmpeg reserves one extra palette entry for transparency.
     const maxColors = request.colorCount + 1;
-    palette = await renderPng(createFFmpeg, coreBase,
-      ['-i', request.filename, '-vf', `palettegen=max_colors=${maxColors}`], input, 'palette.png');
+    args.push('-filter_complex', `[0:v:0]palettegen=max_colors=${maxColors}[p];[0:v:0][p]${paletteUse}`);
   } else {
     const response = await fetch(new URL(`pal_${request.palette}.png`, request.assetBase));
     if (!response.ok) throw new Error('Could not load the selected palette.');
-    palette = new Uint8Array(await response.arrayBuffer());
+    inputs['palette.png'] = new Uint8Array(await response.arrayBuffer());
+    args.push('-i', 'palette.png', '-lavfi', paletteUse);
   }
 
-  const result = await renderPng(createFFmpeg, coreBase,
-    ['-i', request.filename, '-i', 'palette.png', '-lavfi', `paletteuse=dither=${request.algorithm}`],
-    { ...input, 'palette.png': palette }, 'output.png');
+  const result = await renderPng(createFFmpeg, coreBase, args, inputs, 'output.png');
   const png = new ArrayBuffer(result.byteLength);
   new Uint8Array(png).set(result);
   return png;
