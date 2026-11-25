@@ -31,8 +31,8 @@ async function renderPng(
   coreBase: URL,
   args: string[],
   inputs: Record<string, Uint8Array>,
-  output: string,
-): Promise<Uint8Array> {
+): Promise<ArrayBuffer> {
+  const output = 'output.png';
   const stderr: string[] = [];
   let onExit!: (code: number) => void;
   let onAbort!: (reason: string) => void;
@@ -57,7 +57,7 @@ async function renderPng(
   ]);
 
   if (code !== 0) throw new Error(stderr.join('\n') || `FFmpeg exited with code ${code}.`);
-  return module.FS.readFile(output);
+  return module.FS.readFile(output).slice().buffer;
 }
 
 async function dither(request: DitherRequest): Promise<ArrayBuffer> {
@@ -83,10 +83,7 @@ async function dither(request: DitherRequest): Promise<ArrayBuffer> {
     args.push('-i', 'palette.png', '-lavfi', paletteUse);
   }
 
-  const result = await renderPng(createFFmpeg, coreBase, args, inputs, 'output.png');
-  const png = new ArrayBuffer(result.byteLength);
-  new Uint8Array(png).set(result);
-  return png;
+  return renderPng(createFFmpeg, coreBase, args, inputs);
 }
 
 self.addEventListener('message', async ({ data }: MessageEvent<DitherRequest>) => {
