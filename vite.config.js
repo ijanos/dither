@@ -17,16 +17,17 @@ function serveFFmpegThreadScript(server) {
   });
 }
 
-export default defineConfig(({ command, isPreview }) => {
-  let coreDirectory = "ffmpeg";
-  if (command === "build" && !isPreview) {
-    const hash = createHash("sha256");
-    for (const name of readdirSync("public/ffmpeg").sort()) {
-      const digest = createHash("sha256").update(readFileSync(resolve("public/ffmpeg", name))).digest();
-      hash.update(name).update("\0").update(digest);
-    }
-    coreDirectory = `ffmpeg-${hash.digest("hex").slice(0, 16)}`;
+function hashedCoreDirectory() {
+  const hash = createHash("sha256");
+  for (const name of readdirSync("public/ffmpeg").sort()) {
+    const digest = createHash("sha256").update(readFileSync(resolve("public/ffmpeg", name))).digest();
+    hash.update(name).update("\0").update(digest);
   }
+  return `ffmpeg-${hash.digest("hex").slice(0, 16)}`;
+}
+
+export default defineConfig(({ command }) => {
+  const coreDirectory = command === "build" ? hashedCoreDirectory() : "ffmpeg";
   return {
     define: { __FFMPEG_DIRECTORY__: JSON.stringify(coreDirectory) },
     plugins: [tailwindcss(), {
